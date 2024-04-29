@@ -32,7 +32,24 @@ function App() {
     setUpdatedData(updatedJsonData);
 
     try {
-      const response = await fetch("http://localhost:3001/api/updateJson", {
+      const response = await fetch("https://nodejs-serverless-function-express-blue-psi.vercel.app/api/hello", {
+        method: "GET",
+        headers: {
+          "Content-Type": "application/json",
+        },
+      });
+      if (response.ok) {
+        // Processar a resposta aqui se necessário
+        console.log("Requisição GET bem-sucedida!");
+      } else {
+        console.error("Erro ao fazer requisição GET - BACK:", response.statusText);
+      }
+    } catch (error) {
+      console.error("Erro ao fazer requisição GET - FRONT:", error);
+    }
+
+    try {
+      const response = await fetch("https://nodejs-serverless-function-express-blue-psi.vercel.app/api/updateJson", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -52,10 +69,6 @@ function App() {
     closeModal();
     toast.success("Reserva confirmada com sucesso!");
   };
-
-  useEffect(() => {
- 
-  }, [updatedData]);
 
   return (
     <div className="App">

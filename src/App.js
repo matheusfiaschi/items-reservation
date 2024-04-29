@@ -4,6 +4,7 @@ import "./App.css";
 import jsonData from "./dataBase.json"; // Importe seu JSON aqui
 import { ToastContainer, toast } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
+import { getAll } from '@vercel/edge-config';
 
 function App() {
   const [showModal, setShowModal] = useState(false); // Estado para controlar se o modal está aberto
@@ -31,39 +32,24 @@ function App() {
  
     setUpdatedData(updatedJsonData);
 
-    try {
-      const response = await fetch("https://nodejs-serverless-function-express-blue-psi.vercel.app/api/hello", {
-        method: "GET",
-        headers: {
-          "Content-Type": "application/json",
-        },
-      });
-      if (response.ok) {
-        // Processar a resposta aqui se necessário
-        console.log("Requisição GET bem-sucedida!");
-      } else {
-        console.error("Erro ao fazer requisição GET - BACK:", response.statusText);
-      }
-    } catch (error) {
-      console.error("Erro ao fazer requisição GET - FRONT:", error);
-    }
-
-    try {
-      const response = await fetch("https://nodejs-serverless-function-express-blue-psi.vercel.app/api/updateJson", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({ updatedJsonData }),
-      });
-      if (response.ok) {
-        console.log("Item atualizado com sucesso!");
-      } else {
-        console.error("Erro ao atualizar item - BACK:", response.statusText);
-      }
-    } catch (error) {
-      console.error("Erro ao atualizar item - FRONT:", error);
-    }
+    const config = await getAll();
+    console.log(config);
+    // try {
+    //   const response = await fetch("http://localhost:3001/api/updateJson", {
+    //     method: "POST",
+    //     headers: {
+    //       "Content-Type": "application/json",
+    //     },
+    //     body: JSON.stringify({ updatedJsonData }),
+    //   });
+    //   if (response.ok) {
+    //     console.log("Item atualizado com sucesso!");
+    //   } else {
+    //     console.error("Erro ao atualizar item - BACK:", response.statusText);
+    //   }
+    // } catch (error) {
+    //   console.error("Erro ao atualizar item - FRONT:", error);
+    // }
 
     console.log("Reserva confirmada!");
     closeModal();

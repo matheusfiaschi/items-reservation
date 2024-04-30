@@ -1,64 +1,123 @@
 import React, { useState, useEffect } from "react";
-import logo from "./logo.svg";
 import "./App.css";
-import jsonData from "./dataBase.json"; // Importe seu JSON aqui
 import { ToastContainer, toast } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
-import { getAll } from '@vercel/edge-config';
+import { PacmanLoader } from "react-spinners";
 
 function App() {
-  const [showModal, setShowModal] = useState(false); // Estado para controlar se o modal está aberto
-  const [selectedItemIndex, setSelectedItemIndex] = useState(null); // Estado para armazenar o índice do item selecionado
-  const [updatedData, setUpdatedData] = useState(jsonData); // Estado para armazenar os dados atualizados
+  const [showModal, setShowModal] = useState(false);
+  const [selectedItemIndex, setSelectedItemIndex] = useState(null);
+  const [updatedData, setUpdatedData] = useState([]);
+  const [name, setName] = useState("");
+  const [loading, setLoading] = useState(false);
 
   const openModal = (index) => {
-    setSelectedItemIndex(index); // Define o índice do item selecionado
-    setShowModal(true); // Função para abrir o modal
+    setSelectedItemIndex(index);
+    setShowModal(true);
   };
 
   const closeModal = () => {
-    setShowModal(false); // Função para fechar o modal
+    setShowModal(false);
+  };
+
+  useEffect(() => {
+    loadItems();
+  }, []);
+
+  const loadItems = () => {
+    fetch(
+      `https://edge-config.vercel.com/ecfg_rwi3tgaetdpr4csjh6gzbj5fkhan/items`,
+      {
+        headers: {
+          Authorization: `Bearer 941d091a-b295-4605-a6b1-4336ae5049e3`,
+        },
+      }
+    )
+      .then((response) => {
+        if (!response.ok) {
+          throw new Error("Erro na solicitação!");
+        }
+        return response.json(); // Isso converte a resposta para JSON
+      })
+      .then((data) => {
+        setUpdatedData(data);
+        console.log(data);
+      })
+      .catch((error) => {
+        console.error("Erro:", error);
+      });
   };
 
   const handleReserve = async () => {
-    const updatedJsonData = updatedData.map((item, index) => {
-      if (index === selectedItemIndex && item.active) {
-        return { ...item, active: false };
+    if (!name) {
+      toast.error("Por favor, insira seu nome.");
+      return;
+    }
+
+    closeModal();
+
+    setLoading(true);
+
+    let reservationItem = {};
+    const updatedJsonData = Object.keys(updatedData).map((key) => {
+      if (key === selectedItemIndex && updatedData[key].active) {
+        reservationItem = {
+          ...updatedData[key],
+          active: false,
+          reservationName: name,
+        };
+        return { ...updatedData[key], active: false };
       }
-      return item;
+      return updatedData[key];
     });
 
     await Promise.all(updatedJsonData);
- 
+
     setUpdatedData(updatedJsonData);
 
-    const config = await getAll();
-    console.log(config);
-    // try {
-    //   const response = await fetch("http://localhost:3001/api/updateJson", {
-    //     method: "POST",
-    //     headers: {
-    //       "Content-Type": "application/json",
-    //     },
-    //     body: JSON.stringify({ updatedJsonData }),
-    //   });
-    //   if (response.ok) {
-    //     console.log("Item atualizado com sucesso!");
-    //   } else {
-    //     console.error("Erro ao atualizar item - BACK:", response.statusText);
-    //   }
-    // } catch (error) {
-    //   console.error("Erro ao atualizar item - FRONT:", error);
-    // }
+    console.log(reservationItem);
+    try {
+      const updateEdgeConfig = await fetch(
+        `https://api.vercel.com/v1/edge-config/ecfg_rwi3tgaetdpr4csjh6gzbj5fkhan/items`,
+        {
+          method: "PATCH",
+          headers: {
+            Authorization: `Bearer 3bxyfFFGfjfdZQOJSY5gWsWV`,
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({
+            items: [
+              {
+                operation: "update",
+                key: `${reservationItem.key}`,
+                value: reservationItem,
+              },
+            ],
+          }),
+        }
+      );
+      const result = await updateEdgeConfig.json();
+      console.log(result);
+    } catch (error) {
+      console.log(error);
+    }
 
-    console.log("Reserva confirmada!");
-    closeModal();
+    setLoading(false);
     toast.success("Reserva confirmada com sucesso!");
   };
 
   return (
     <div className="App">
       <ToastContainer />
+      {loading && (
+        <div className="spinner-overlay">
+          <PacmanLoader
+            color={"#36D7B7"}
+            loading={loading}
+            size={25}
+          />
+        </div>
+      )}
       <header className="App-header">
         <div className="container-name">
           <div style={{ height: "20px" }}>
@@ -81,29 +140,35 @@ function App() {
         </div>
       </header>
       <div className="product-list">
-        {updatedData.map((product, index) =>
-          product.active ? (
-            <div className="product-card" key={index}>
-              <h2>{product.name}</h2>
-              <div
-                className="container-img"
-                style={{
-                  background: `url(${product.image})`,
-                  backgroundSize: "contain",
-                  backgroundRepeat: "no-repeat",
-                  backgroundPosition: "center",
-                }}
-              ></div>
-              <p style={{ userSelect: "none" }}>{product.description}</p>
-              <p>{product.obs}</p>
-              <div onClick={() => openModal(index)} className="reservar">
-                Reservar
+        {Object.keys(updatedData).some((key) => updatedData[key].active) ? (
+          Object.keys(updatedData).map((key) =>
+            updatedData[key].active ? (
+              <div className="product-card" key={key}>
+                <h2>{updatedData[key].name}</h2>
+                <div
+                  className="container-img"
+                  style={{
+                    background: `url(${updatedData[key].image})`,
+                    backgroundSize: "contain",
+                    backgroundRepeat: "no-repeat",
+                    backgroundPosition: "center",
+                  }}
+                ></div>
+                <p style={{ userSelect: "none" }}>
+                  {updatedData[key].description}
+                </p>
+                <div onClick={() => openModal(key)} className="reservar">
+                  Reservar
+                </div>
               </div>
-            </div>
-          ) : null
+            ) : null
+          )
+        ) : (
+          <p>Não há mais itens disponíveis na lista.</p>
         )}
       </div>
-      {showModal && ( // Renderiza o modal apenas se showModal for verdadeiro
+
+      {showModal && (
         <div className="modal">
           <div className="modal-content">
             <span className="close" onClick={closeModal}>
@@ -115,6 +180,13 @@ function App() {
               possibilidade de outra pessoa reservar este item, deseja
               continuar?
             </p>
+            <input
+              className="input-name"
+              type="text"
+              placeholder="Seu nome completo"
+              value={name}
+              onChange={(e) => setName(e.target.value)}
+            />
             <div className="modal-buttons">
               <button className="cancelar" onClick={handleReserve}>
                 Confirmar

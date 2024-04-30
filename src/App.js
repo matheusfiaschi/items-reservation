@@ -139,6 +139,7 @@ function App() {
           />
         </div>
       </header>
+      <div className="lista-presentes">Lista de presentes</div>
       <div className="product-list">
         {Object.keys(updatedData).some((key) => updatedData[key].active) ? (
           Object.keys(updatedData).map((key) =>

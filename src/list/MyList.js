@@ -9,12 +9,9 @@ function MyList() {
   const [showModal, setShowModal] = useState(false);
   const [selectedItemKey, setSelectedItemKey] = useState(null);
   const [updatedData, setUpdatedData] = useState(
-    JSON.parse(localStorage.getItem("myList"))
+    localStorage?.myList ? JSON.parse(localStorage.getItem("myList")) : {}
   );
-  const [name, setName] = useState("");
   const [loading, setLoading] = useState(false);
-
-  console.log(JSON.parse(localStorage.getItem("myList")));
 
   const openModal = (key) => {
     // Modificado para receber a chave

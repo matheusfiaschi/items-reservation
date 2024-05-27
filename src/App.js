@@ -159,7 +159,17 @@ function App() {
         </div>
         <div className="cha">CHÁ DE CASA NOVA</div>
         <div onClick={myListPage} style={{ display: "flex" }}>
-          <div className="quantityList">{Object.keys(JSON.parse(localStorage.getItem("myList"))).length}</div>
+          <div
+            hidden={
+              !localStorage?.myList ||
+              !Object.keys(JSON.parse(localStorage.getItem("myList")))?.length
+            }
+            className="quantityList"
+          >
+            {localStorage.myList
+              ? Object.keys(JSON.parse(localStorage.getItem("myList")))?.length
+              : 0}
+          </div>
           <img className="list" src={coracaoImage} />
         </div>
         {/* <div>

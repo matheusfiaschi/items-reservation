@@ -135,7 +135,7 @@ function App() {
   };
 
   const myListPage = async () => {
-    window.location.href = "http://localhost:3000/myList";
+    window.location.href = "https://items-reservation.vercel.app/myList";
   };
 
   return (

@@ -27,7 +27,7 @@ function MyList() {
   };
 
   const myListPage = async () => {
-    window.location.href = "http://localhost:3000/";
+    window.location.href = "https://items-reservation.vercel.app/";
   };
 
   const cancelReserve = async () => {

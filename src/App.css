@@ -41,6 +41,7 @@
   flex-wrap: wrap;
   justify-content: center;
   margin-top: 30px;
+  margin-bottom: 30px;
 }
 
 .product-card {
@@ -81,6 +82,7 @@
   font-family: math;
   font-size: 18px;
   margin-left: 20px;
+  user-select: none;
 }
 
 .e {
@@ -95,6 +97,7 @@
   font-size: 22px;
   color: #ffffff;
   font-family: math;
+  user-select: none;
 }
 
 .coracao {
@@ -149,6 +152,40 @@ body {
   text-align: center;
   position: relative;
   width: 260px;
+}
+
+/* Animação para abrir o modal */
+@keyframes modalopen {
+  from {
+    opacity: 0;
+    transform: scale(0.8);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+.modal-open {
+  animation-name: modalopen;
+  animation-duration: 0.3s; /* Duração da animação */
+}
+
+.modal-close {
+  animation-name: modalclose;
+  animation-duration: 0.3s; /* Duração da animação */
+}
+
+/* Animação para fechar o modal */
+@keyframes modalclose {
+  from {
+    opacity: 1;
+    transform: scale(1);
+  }
+  to {
+    opacity: 0;
+    transform: scale(0.8);
+  }
 }
 
 .close {
@@ -216,4 +253,78 @@ body {
   display: flex;
   align-items: center;
   justify-content: center;
+}
+
+.img-gabiAndPredro {
+  background: url(./img/gabiAndPredro.jpeg);
+  width: 250px;
+  height: 250px;
+  border-radius: 100%;
+  background-position: center -50px;
+  background-size: 100%;
+  margin-right: 20px;
+}
+
+.text-introduction {
+  flex: 1;
+  text-align: left;
+}
+
+.container-introduction {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-top: 30px;
+  margin-bottom: 30px;
+  padding-left: 20px;
+  padding-right: 20px;
+}
+
+.divider {
+  border-right: solid 0.5px #282c34;
+  margin-right: 20px;
+  height: 280px;
+}
+
+.divider-page {
+  width: 100%;
+  height: 5px;
+  background: #282c34;
+}
+
+.list {
+  height: 30px;
+  width: 27px;
+  margin-right: 15px;
+}
+
+.quantityList {
+  background: red;
+  border-radius: 100%;
+  height: 16px;
+  width: 16px;
+  font-size: 13px;
+  margin-right: -8px;
+  z-index: 1;
+}
+
+@media (max-width: 500px) {
+  .container-introduction {
+    flex-direction: column;
+    margin-bottom: 10px;
+  }
+
+  .img-gabiAndPredro {
+    margin-right: 0px;
+  }
+
+  .divider {
+    border-top: solid 0.5px #282c34;
+    width: 100%;
+    border-right: none;
+    height: 0;
+    margin-top: 20px;
+    margin-bottom: 5px;
+    margin-right: 0;
+  }
 }

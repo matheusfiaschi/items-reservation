@@ -3,16 +3,18 @@ import "./App.css";
 import { ToastContainer, toast } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
 import { PacmanLoader } from "react-spinners";
+import coracaoImage from "./img/list.svg";
 
 function App() {
   const [showModal, setShowModal] = useState(false);
-  const [selectedItemIndex, setSelectedItemIndex] = useState(null);
+  const [selectedItemKey, setSelectedItemKey] = useState(null); // Alterado para selectedItemKey
   const [updatedData, setUpdatedData] = useState([]);
   const [name, setName] = useState("");
   const [loading, setLoading] = useState(false);
 
-  const openModal = (index) => {
-    setSelectedItemIndex(index);
+  const openModal = (key) => {
+    // Modificado para receber a chave
+    setSelectedItemKey(key);
     setShowModal(true);
   };
 
@@ -21,36 +23,37 @@ function App() {
   };
 
   useEffect(() => {
-    loadItems();
+    const fetchData = async () => {
+      try {
+        const data = await loadItems();
+        setUpdatedData(data);
+        console.log(data);
+      } catch (error) {
+        console.error("Erro:", error);
+      }
+    };
+
+    fetchData();
   }, []);
 
-  const loadItems = () => {
-    fetch(
+  const loadItems = async () => {
+    const response = await fetch(
       `https://edge-config.vercel.com/ecfg_rwi3tgaetdpr4csjh6gzbj5fkhan/items`,
       {
         headers: {
           Authorization: `Bearer 941d091a-b295-4605-a6b1-4336ae5049e3`,
         },
       }
-    )
-      .then((response) => {
-        if (!response.ok) {
-          throw new Error("Erro na solicitação!");
-        }
-        return response.json(); // Isso converte a resposta para JSON
-      })
-      .then((data) => {
-        setUpdatedData(data);
-        console.log(data);
-      })
-      .catch((error) => {
-        console.error("Erro:", error);
-      });
+    );
+    if (!response.ok) {
+      throw new Error("Erro na solicitação!");
+    }
+    return response.json();
   };
 
   const handleReserve = async () => {
     if (!name) {
-      toast.error("Por favor, insira seu nome.");
+      toast.warning("Por favor, insira seu nome.");
       return;
     }
 
@@ -58,24 +61,45 @@ function App() {
 
     setLoading(true);
 
+    const items = await loadItems();
+
+    setUpdatedData(items);
+
+    console.log("items", items);
+
     let reservationItem = {};
-    const updatedJsonData = Object.keys(updatedData).map((key) => {
-      if (key === selectedItemIndex && updatedData[key].active) {
+    let isReservedItem = false;
+    const updatedJsonData = Object.keys(items).map((key) => {
+      if (key === selectedItemKey && items[key].active) {
         reservationItem = {
-          ...updatedData[key],
+          ...items[key],
           active: false,
           reservationName: name,
         };
-        return { ...updatedData[key], active: false };
+        return { ...items[key], active: false };
+      } else if (key === selectedItemKey && !items[key].active) {
+        isReservedItem = true;
       }
-      return updatedData[key];
+
+      return items[key];
     });
 
     await Promise.all(updatedJsonData);
 
+    if (isReservedItem) {
+      closeModal();
+      setLoading(false);
+      toast.error(
+        "Desculpe, infelizmente esse item já foi reservado por outra pessoa, por favor escolha outra opção!",
+        {
+          autoClose: 10000,
+        }
+      );
+      return;
+    }
+
     setUpdatedData(updatedJsonData);
 
-    console.log(reservationItem);
     try {
       const updateEdgeConfig = await fetch(
         `https://api.vercel.com/v1/edge-config/ecfg_rwi3tgaetdpr4csjh6gzbj5fkhan/items`,
@@ -104,6 +128,14 @@ function App() {
 
     setLoading(false);
     toast.success("Reserva confirmada com sucesso!");
+
+    const myList = JSON.parse(localStorage.getItem("myList")) || {};
+    myList[reservationItem.key] = reservationItem;
+    localStorage.setItem("myList", JSON.stringify(myList));
+  };
+
+  const myListPage = async () => {
+    window.location.href = "http://localhost:3000/myList";
   };
 
   return (
@@ -111,11 +143,7 @@ function App() {
       <ToastContainer />
       {loading && (
         <div className="spinner-overlay">
-          <PacmanLoader
-            color={"#36D7B7"}
-            loading={loading}
-            size={25}
-          />
+          <PacmanLoader color={"#36D7B7"} loading={loading} size={25} />
         </div>
       )}
       <header className="App-header">
@@ -130,16 +158,53 @@ function App() {
           </div>
         </div>
         <div className="cha">CHÁ DE CASA NOVA</div>
-        <div>
+        <div onClick={myListPage} style={{ display: "flex" }}>
+          <div className="quantityList">{Object.keys(JSON.parse(localStorage.getItem("myList"))).length}</div>
+          <img className="list" src={coracaoImage} />
+        </div>
+        {/* <div>
           <img
             className="coracao"
             src={
               "https://images.vexels.com/media/users/3/324725/isolated/preview/c69cbd4788f85c9bc18888c06a502675-a-cone-de-coraa-a-o-rosa.png"
             }
           />
-        </div>
+        </div> */}
       </header>
-      <div className="lista-presentes">Lista de presentes</div>
+      <div className="container-introduction">
+        <div className="img-gabiAndPredro"></div>
+        <div className="divider"></div>
+        <div className="text-introduction">
+          <p>Olá, família e amigos!</p>
+          <p>
+            É com muito carinho que convidamos vocês para o nosso Chá de Casa
+            Nova!
+          </p>
+          <p>
+            Neste site estarão algumas sugestões de presentes para o nosso apê,
+            basta você clicar em um item que tenha interesse em nos presentear,
+            colocar o seu nome e pronto.
+          </p>
+          <p>
+            Os itens reservados ficarão na sua lista. Você pode acessá-la
+            clicando no ícone de lista no cabeçalho, no topo da página.
+          </p>
+          <p>
+            Após escolher o item, ele não ficará mais disponível para escolha,
+            evitando assim que tenha algo repetido. Além da foto do presente,
+            terá também um link onde é possível ver o produto diretamente no
+            site de vendas (Amazon, Mercado Livre, etc.)
+          </p>
+          <p>
+            O site não é vinculado a nenhuma loja, a ideia é que você leve esse
+            presente no dia do chá, para que possamos fazer algumas brincadeiras
+            e principalmente que seja uma surpresa para todos.
+          </p>
+          <p>Aguardamos a sua presença!</p>
+        </div>
+      </div>
+      <div className="divider-page"></div>
+      <div className="lista-presentes">LISTA DE PRESENTES</div>
       <div className="product-list">
         {Object.keys(updatedData).some((key) => updatedData[key].active) ? (
           Object.keys(updatedData).map((key) =>
@@ -158,7 +223,12 @@ function App() {
                 <p style={{ userSelect: "none" }}>
                   {updatedData[key].description}
                 </p>
-                <div onClick={() => openModal(key)} className="reservar">
+                <div
+                  onClick={() => openModal(updatedData[key].key)}
+                  className="reservar"
+                >
+                  {" "}
+                  {/* Modificado para passar a chave */}
                   Reservar
                 </div>
               </div>
@@ -171,7 +241,11 @@ function App() {
 
       {showModal && (
         <div className="modal">
-          <div className="modal-content">
+          <div
+            className={`modal-content ${
+              showModal ? "modal-open" : "modal-close"
+            }`}
+          >
             <span className="close" onClick={closeModal}>
               &times;
             </span>

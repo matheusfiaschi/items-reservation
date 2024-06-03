@@ -37,7 +37,9 @@ function App() {
 
   const loadItems = async () => {
     try {
-      const response = await fetch("https://items-reservation-back.vercel.app/items");
+      const response = await fetch(
+        "https://items-reservation-back.vercel.app/items"
+      );
       if (!response.ok) {
         throw new Error("Erro ao obter dados");
       }
@@ -78,13 +80,16 @@ function App() {
 
     console.log(reservationItem);
 
-    fetch(`https://items-reservation-back.vercel.app/items/${reservationItem._id}`, {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify(reservationItem),
-    })
+    fetch(
+      `https://items-reservation-back.vercel.app/items/${reservationItem._id}`,
+      {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify(reservationItem),
+      }
+    )
       .then((response) => {
         if (!response.ok) {
           throw new Error("Failed to update item");
@@ -191,28 +196,40 @@ function App() {
       <div className="divider-page"></div>
       <div className="lista-presentes">LISTA DE PRESENTES</div>
       <div className="product-list">
-        {updatedData.length > 0 ? (
-          updatedData.map(
-            (item) =>
-              item.active && (
-                <div className="product-card" key={item._id}>
-                  <h2>{item.name}</h2>
-                  <div
-                    className="container-img"
-                    style={{
-                      background: `url(${item.image})`,
-                      backgroundSize: "contain",
-                      backgroundRepeat: "no-repeat",
-                      backgroundPosition: "center",
-                    }}
-                  ></div>
-                  <p style={{ userSelect: "none" }}>{item.description}</p>
-                  <div onClick={() => openModal(item._id)} className="reservar">
-                    Reservar
-                  </div>
-                </div>
+        {updatedData.length ? (
+          <>
+            {updatedData.some((item) => item.active) ? (
+              updatedData.map(
+                (item) =>
+                  item.active && (
+                    <div className="product-card" key={item._id}>
+                      <h2>{item.name}</h2>
+                      <div
+                        className="container-img"
+                        style={{
+                          background: `url(${item.image})`,
+                          backgroundSize: "contain",
+                          backgroundRepeat: "no-repeat",
+                          backgroundPosition: "center",
+                        }}
+                      ></div>
+                      <p style={{ userSelect: "none" }}>{item.description}</p>
+                      <a style={{ userSelect: "none" }}>
+                        Sugestão lugar de compra{" "}
+                      </a>
+                      <div
+                        onClick={() => openModal(item._id)}
+                        className="reservar"
+                      >
+                        Reservar
+                      </div>
+                    </div>
+                  )
               )
-          )
+            ) : (
+              <p>Não há mais itens disponíveis na lista.</p>
+            )}
+          </>
         ) : (
           <p>Não há mais itens disponíveis na lista.</p>
         )}

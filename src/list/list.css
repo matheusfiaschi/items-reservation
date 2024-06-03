@@ -42,3 +42,12 @@
 .item-container button {
   margin-right: 5px;
 }
+
+.suggestionText {
+  user-select: none;
+  padding: 5px;
+  border-radius: 5px;
+  background: #b26868;
+  color: white;
+  margin-bottom: 15px;
+}

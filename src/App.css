@@ -328,3 +328,12 @@ body {
     margin-right: 0;
   }
 }
+
+.suggestionText {
+  user-select: none;
+  padding: 5px;
+  border-radius: 5px;
+  background: #b26868;
+  color: white;
+  margin-bottom: 15px;
+}

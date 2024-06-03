@@ -123,7 +123,11 @@ function App() {
 
   const myListPage = async () => {
     window.location.href = "https://items-reservation.vercel.app/myList";
-    // window.location.href = "https://items-reservation.vercel.app/myList";
+  };
+
+  const openSuggestionSite = async (url) => {
+    console.log(url);
+    window.open(url, "_blank");
   };
 
   return (
@@ -214,8 +218,12 @@ function App() {
                         }}
                       ></div>
                       <p style={{ userSelect: "none" }}>{item.description}</p>
-                      <a style={{ userSelect: "none" }}>
-                        Sugestão lugar de compra{" "}
+                      <a
+                        className="suggestionText"
+                        style={{ userSelect: "none" }}
+                        onClick={() => openSuggestionSite(item.link)}
+                      >
+                        Sugestão lugar de compra
                       </a>
                       <div
                         onClick={() => openModal(item._id)}

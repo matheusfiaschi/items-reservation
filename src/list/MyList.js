@@ -46,7 +46,11 @@ function MyList() {
 
   const myListPage = () => {
     window.location.href = "https://items-reservation.vercel.app/";
-    // window.location.href = "https://items-reservation.vercel.app/";
+  };
+
+  const openSuggestionSite = async (url) => {
+    console.log(url);
+    window.open(url, "_blank");
   };
 
   const cancelReserve = async () => {
@@ -63,13 +67,16 @@ function MyList() {
         return item;
       });
 
-      fetch(`https://items-reservation-back.vercel.app/items/${cancelationItem._id}`, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify(cancelationItem),
-      })
+      fetch(
+        `https://items-reservation-back.vercel.app/items/${cancelationItem._id}`,
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify(cancelationItem),
+        }
+      )
         .then((response) => {
           if (!response.ok) {
             throw new Error("Failed to update item");
@@ -141,6 +148,13 @@ function MyList() {
                 }}
               ></div>
               <p style={{ userSelect: "none" }}>{item.description}</p>
+              <a
+                className="suggestionText"
+                style={{ userSelect: "none" }}
+                onClick={() => openSuggestionSite(item.link)}
+              >
+                Sugestão lugar de compra
+              </a>
               <div onClick={() => openModal(item._id)} className="reservar">
                 Cancelar Reserva
               </div>

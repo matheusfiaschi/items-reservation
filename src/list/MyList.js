@@ -8,13 +8,10 @@ import backImage from "../img/back.svg";
 function MyList() {
   const [showModal, setShowModal] = useState(false);
   const [selectedItemKey, setSelectedItemKey] = useState(null);
-  const [updatedData, setUpdatedData] = useState(
-    localStorage?.myList ? JSON.parse(localStorage.getItem("myList")) : {}
-  );
+  const [updatedData, setUpdatedData] = useState([]);
   const [loading, setLoading] = useState(false);
 
   const openModal = (key) => {
-    // Modificado para receber a chave
     setSelectedItemKey(key);
     setShowModal(true);
   };
@@ -23,49 +20,82 @@ function MyList() {
     setShowModal(false);
   };
 
-  const myListPage = async () => {
+  useEffect(() => {
+    const fetchData = async () => {
+      try {
+        const data = await loadMyList();
+        setUpdatedData(data);
+        console.log(data);
+      } catch (error) {
+        console.error("Erro:", error);
+      }
+    };
+
+    fetchData();
+  }, []);
+
+  const loadMyList = async () => {
+    try {
+      const myList = JSON.parse(localStorage.getItem("myList")) || {};
+      return Object.values(myList); // Retorna apenas os valores do objeto como um array
+    } catch (error) {
+      console.error("Erro ao carregar lista de reservas:", error);
+      return [];
+    }
+  };
+
+  const myListPage = () => {
     window.location.href = "https://items-reservation.vercel.app/";
+    // window.location.href = "https://items-reservation.vercel.app/";
   };
 
   const cancelReserve = async () => {
-    const cancelationItem = { ...updatedData[selectedItemKey], active: true };
-
     setLoading(true);
 
+    let cancelationItem;
+
     try {
-      const updateEdgeConfig = await fetch(
-        `https://api.vercel.com/v1/edge-config/ecfg_rwi3tgaetdpr4csjh6gzbj5fkhan/items`,
-        {
-          method: "PATCH",
-          headers: {
-            Authorization: `Bearer 3bxyfFFGfjfdZQOJSY5gWsWV`,
-            "Content-Type": "application/json",
-          },
-          body: JSON.stringify({
-            items: [
-              {
-                operation: "update",
-                key: selectedItemKey,
-                value: cancelationItem,
-              },
-            ],
-          }),
+      const updatedList = updatedData.map((item) => {
+        if (item._id === selectedItemKey) {
+          cancelationItem = { ...item, active: true }; // Cria o objeto cancelationItem com status active true
+          return cancelationItem; // Retorna o cancelationItem modificado
         }
-      );
-      const result = await updateEdgeConfig.json();
-      console.log(result);
+        return item;
+      });
+
+      fetch(`https://items-reservation-back.vercel.app/items/${cancelationItem._id}`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify(cancelationItem),
+      })
+        .then((response) => {
+          if (!response.ok) {
+            throw new Error("Failed to update item");
+          }
+          return response.json();
+        })
+        .then((data) => {
+          console.log("Item updated successfully:", data);
+        })
+        .catch((error) => {
+          console.error("Error updating item:", error);
+        });
+
+      const myList = JSON.parse(localStorage.getItem("myList")) || {};
+      delete myList[cancelationItem._id];
+      localStorage.setItem("myList", JSON.stringify(myList));
+
+      setUpdatedData(Object.values(myList));
+      closeModal();
+      setLoading(false);
+      toast.success("Reserva cancelada com sucesso!");
     } catch (error) {
-      console.log(error);
+      console.error("Erro ao cancelar reserva:", error);
+      setLoading(false);
+      toast.error("Erro ao cancelar reserva. Tente novamente mais tarde.");
     }
-
-    setLoading(false);
-    toast.success("Reserva cancelada com sucesso!");
-
-    const myList = JSON.parse(localStorage.getItem("myList")) || {};
-    delete myList[selectedItemKey];
-    localStorage.setItem("myList", JSON.stringify(myList));
-    setUpdatedData(myList);
-    closeModal();
   };
 
   return (
@@ -83,16 +113,6 @@ function MyList() {
           className="list"
           src={backImage}
         />
-        {/* <div className="container-name" onClick={myListPage}>
-          <div style={{ height: "20px" }}>
-            <p style={{ marginRight: "5px" }}>
-              PEDRO <b className="e">e</b>
-            </p>
-          </div>
-          <div>
-            <p>GABI</p>
-          </div>
-        </div> */}
         <div className="cha" onClick={myListPage}>
           CHÁ DE CASA NOVA
         </div>
@@ -106,38 +126,26 @@ function MyList() {
         </div>
       </header>
       <div className="lista-presentes">MINHAS RESERVAS</div>
-      {/* <div onClick={myListPage} style={{ display: "flex" }}>
-        Lista de presentes
-      </div> */}
       <div className="product-list">
-        {Object.keys(updatedData).length ? (
-          Object.keys(updatedData).map(
-            (
-              key // Removido Object.keys(updatedData).some(...)
-            ) => (
-              <div className="product-card" key={key}>
-                <h2>{updatedData[key].name}</h2>
-                <div
-                  className="container-img"
-                  style={{
-                    background: `url(${updatedData[key].image})`,
-                    backgroundSize: "contain",
-                    backgroundRepeat: "no-repeat",
-                    backgroundPosition: "center",
-                  }}
-                ></div>
-                <p style={{ userSelect: "none" }}>
-                  {updatedData[key].description}
-                </p>
-                <div
-                  onClick={() => openModal(updatedData[key].key)}
-                  className="reservar"
-                >
-                  Cancelar Reserva
-                </div>
+        {updatedData.length ? (
+          updatedData.map((item) => (
+            <div className="product-card" key={item._id}>
+              <h2>{item.name}</h2>
+              <div
+                className="container-img"
+                style={{
+                  background: `url(${item.image})`,
+                  backgroundSize: "contain",
+                  backgroundRepeat: "no-repeat",
+                  backgroundPosition: "center",
+                }}
+              ></div>
+              <p style={{ userSelect: "none" }}>{item.description}</p>
+              <div onClick={() => openModal(item._id)} className="reservar">
+                Cancelar Reserva
               </div>
-            )
-          )
+            </div>
+          ))
         ) : (
           <p>Não há itens na sua lista de reserva.</p>
         )}
@@ -155,9 +163,9 @@ function MyList() {
             </span>
             <h2>Cancelar Reserva</h2>
             <p>
-              Ao cancelar a reseva, você estará devolvendo esse item para lista
-              de presentes, e dando a possibilidade de outra pessoa reservar
-              esse item, deseja cancelar mesmo assim ?
+              Ao cancelar a reserva, você estará devolvendo esse item para a
+              lista de presentes, dando a possibilidade de outra pessoa reservar
+              esse item. Deseja cancelar mesmo assim?
             </p>
             <div className="modal-buttons">
               <button className="confirmar" onClick={cancelReserve}>

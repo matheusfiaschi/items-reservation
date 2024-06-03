@@ -7,13 +7,12 @@ import coracaoImage from "./img/list.svg";
 
 function App() {
   const [showModal, setShowModal] = useState(false);
-  const [selectedItemKey, setSelectedItemKey] = useState(null); // Alterado para selectedItemKey
+  const [selectedItemKey, setSelectedItemKey] = useState(null);
   const [updatedData, setUpdatedData] = useState([]);
   const [name, setName] = useState("");
   const [loading, setLoading] = useState(false);
 
-  const openModal = (key) => {
-    // Modificado para receber a chave
+  const openModal = async (key) => {
     setSelectedItemKey(key);
     setShowModal(true);
   };
@@ -37,18 +36,17 @@ function App() {
   }, []);
 
   const loadItems = async () => {
-    const response = await fetch(
-      `https://edge-config.vercel.com/ecfg_rwi3tgaetdpr4csjh6gzbj5fkhan/items`,
-      {
-        headers: {
-          Authorization: `Bearer 941d091a-b295-4605-a6b1-4336ae5049e3`,
-        },
+    try {
+      const response = await fetch("https://items-reservation-back.vercel.app/items");
+      if (!response.ok) {
+        throw new Error("Erro ao obter dados");
       }
-    );
-    if (!response.ok) {
-      throw new Error("Erro na solicitação!");
+      const data = await response.json();
+      console.log("Dados recebidos:", data);
+      return data;
+    } catch (error) {
+      console.error("Erro:", error);
     }
-    return response.json();
   };
 
   const handleReserve = async () => {
@@ -58,36 +56,13 @@ function App() {
     }
 
     closeModal();
-
     setLoading(true);
 
     const items = await loadItems();
-
     setUpdatedData(items);
+    const reservationItem = items.find((item) => item._id === selectedItemKey);
 
-    console.log("items", items);
-
-    let reservationItem = {};
-    let isReservedItem = false;
-    const updatedJsonData = Object.keys(items).map((key) => {
-      if (key === selectedItemKey && items[key].active) {
-        reservationItem = {
-          ...items[key],
-          active: false,
-          reservationName: name,
-        };
-        return { ...items[key], active: false };
-      } else if (key === selectedItemKey && !items[key].active) {
-        isReservedItem = true;
-      }
-
-      return items[key];
-    });
-
-    await Promise.all(updatedJsonData);
-
-    if (isReservedItem) {
-      closeModal();
+    if (!reservationItem || !reservationItem.active) {
       setLoading(false);
       toast.error(
         "Desculpe, infelizmente esse item já foi reservado por outra pessoa, por favor escolha outra opção!",
@@ -98,44 +73,52 @@ function App() {
       return;
     }
 
-    setUpdatedData(updatedJsonData);
+    reservationItem.active = false;
+    reservationItem.reservationName = name;
 
-    try {
-      const updateEdgeConfig = await fetch(
-        `https://api.vercel.com/v1/edge-config/ecfg_rwi3tgaetdpr4csjh6gzbj5fkhan/items`,
-        {
-          method: "PATCH",
-          headers: {
-            Authorization: `Bearer 3bxyfFFGfjfdZQOJSY5gWsWV`,
-            "Content-Type": "application/json",
-          },
-          body: JSON.stringify({
-            items: [
-              {
-                operation: "update",
-                key: `${reservationItem.key}`,
-                value: reservationItem,
-              },
-            ],
-          }),
+    console.log(reservationItem);
+
+    fetch(`https://items-reservation-back.vercel.app/items/${reservationItem._id}`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify(reservationItem),
+    })
+      .then((response) => {
+        if (!response.ok) {
+          throw new Error("Failed to update item");
         }
-      );
-      const result = await updateEdgeConfig.json();
-      console.log(result);
-    } catch (error) {
-      console.log(error);
-    }
+        return response.json();
+      })
+      .then((data) => {
+        console.log("Item updated successfully:", data);
+      })
+      .catch((error) => {
+        console.error("Error updating item:", error);
+      });
+
+    setUpdatedData((prevData) => {
+      const newData = prevData.map((item) => {
+        if (item._id === reservationItem._id) {
+          return reservationItem;
+        }
+        return item;
+      });
+      return newData;
+    });
 
     setLoading(false);
     toast.success("Reserva confirmada com sucesso!");
 
     const myList = JSON.parse(localStorage.getItem("myList")) || {};
-    myList[reservationItem.key] = reservationItem;
+    myList[reservationItem._id] = reservationItem;
     localStorage.setItem("myList", JSON.stringify(myList));
   };
 
   const myListPage = async () => {
     window.location.href = "https://items-reservation.vercel.app/myList";
+    // window.location.href = "https://items-reservation.vercel.app/myList";
   };
 
   return (
@@ -172,14 +155,6 @@ function App() {
           </div>
           <img className="list" src={coracaoImage} />
         </div>
-        {/* <div>
-          <img
-            className="coracao"
-            src={
-              "https://images.vexels.com/media/users/3/324725/isolated/preview/c69cbd4788f85c9bc18888c06a502675-a-cone-de-coraa-a-o-rosa.png"
-            }
-          />
-        </div> */}
       </header>
       <div className="container-introduction">
         <div className="img-gabiAndPredro"></div>
@@ -216,33 +191,27 @@ function App() {
       <div className="divider-page"></div>
       <div className="lista-presentes">LISTA DE PRESENTES</div>
       <div className="product-list">
-        {Object.keys(updatedData).some((key) => updatedData[key].active) ? (
-          Object.keys(updatedData).map((key) =>
-            updatedData[key].active ? (
-              <div className="product-card" key={key}>
-                <h2>{updatedData[key].name}</h2>
-                <div
-                  className="container-img"
-                  style={{
-                    background: `url(${updatedData[key].image})`,
-                    backgroundSize: "contain",
-                    backgroundRepeat: "no-repeat",
-                    backgroundPosition: "center",
-                  }}
-                ></div>
-                <p style={{ userSelect: "none" }}>
-                  {updatedData[key].description}
-                </p>
-                <div
-                  onClick={() => openModal(updatedData[key].key)}
-                  className="reservar"
-                >
-                  {" "}
-                  {/* Modificado para passar a chave */}
-                  Reservar
+        {updatedData.length > 0 ? (
+          updatedData.map(
+            (item) =>
+              item.active && (
+                <div className="product-card" key={item._id}>
+                  <h2>{item.name}</h2>
+                  <div
+                    className="container-img"
+                    style={{
+                      background: `url(${item.image})`,
+                      backgroundSize: "contain",
+                      backgroundRepeat: "no-repeat",
+                      backgroundPosition: "center",
+                    }}
+                  ></div>
+                  <p style={{ userSelect: "none" }}>{item.description}</p>
+                  <div onClick={() => openModal(item._id)} className="reservar">
+                    Reservar
+                  </div>
                 </div>
-              </div>
-            ) : null
+              )
           )
         ) : (
           <p>Não há mais itens disponíveis na lista.</p>

@@ -219,6 +219,7 @@ function App() {
                       ></div>
                       <p style={{ userSelect: "none" }}>{item.description}</p>
                       <a
+                        hidden={!item.link}
                         className="suggestionText"
                         style={{ userSelect: "none" }}
                         onClick={() => openSuggestionSite(item.link)}

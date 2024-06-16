@@ -11,6 +11,7 @@ function App() {
   const [updatedData, setUpdatedData] = useState([]);
   const [name, setName] = useState("");
   const [loading, setLoading] = useState(false);
+  const [loadingItems, setLoadingItems] = useState(false);
 
   const openModal = async (key) => {
     setSelectedItemKey(key);
@@ -37,6 +38,7 @@ function App() {
 
   const loadItems = async () => {
     try {
+      setLoadingItems(true);
       const response = await fetch(
         "https://items-reservation-back.vercel.app/items"
       );
@@ -45,8 +47,10 @@ function App() {
       }
       const data = await response.json();
       console.log("Dados recebidos:", data);
+      setLoadingItems(false);
       return data;
     } catch (error) {
+      setLoadingItems(false);
       console.error("Erro:", error);
     }
   };
@@ -240,7 +244,10 @@ function App() {
             )}
           </>
         ) : (
-          <p>Não há mais itens disponíveis na lista.</p>
+          <>
+            <PacmanLoader color={"#36D7B7"} loading={loadingItems} size={25} />
+            <p hidden={loadingItems}>Não há mais itens disponíveis na lista.</p>
+          </>
         )}
       </div>
 

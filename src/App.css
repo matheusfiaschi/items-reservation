@@ -21,6 +21,9 @@
   align-items: center;
   justify-content: space-between;
   color: white;
+  position: fixed;
+  width: 100%;
+  top: 0;
 }
 
 .App-link {
@@ -278,6 +281,7 @@ body {
   margin-bottom: 30px;
   padding-left: 20px;
   padding-right: 20px;
+  margin-top: 110px;
 }
 
 .divider {

@@ -4,6 +4,7 @@ import { ToastContainer, toast } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
 import { PacmanLoader } from "react-spinners";
 import coracaoImage from "./img/list.svg";
+import qrCodeImage from "./img/qrCode.png";
 
 function App() {
   const [showModal, setShowModal] = useState(false);
@@ -12,6 +13,15 @@ function App() {
   const [name, setName] = useState("");
   const [loading, setLoading] = useState(false);
   const [loadingItems, setLoadingItems] = useState(false);
+
+  const qrCodeItem = {
+    active: true,
+    description:
+      "Caso queira ajudar de alguma maneira que não seja com os itens do site, aceitamos qualquer quantia!",
+    image: qrCodeImage,
+    name: "PIX QRCODE",
+    chavePix: "phfs00739@gmail.com"
+  };
 
   const openModal = async (key) => {
     setSelectedItemKey(key);
@@ -26,8 +36,7 @@ function App() {
     const fetchData = async () => {
       try {
         const data = await loadItems();
-        setUpdatedData(data);
-        console.log(data);
+        setUpdatedData([qrCodeItem, ...data]);
       } catch (error) {
         console.error("Erro:", error);
       }
@@ -46,7 +55,6 @@ function App() {
         throw new Error("Erro ao obter dados");
       }
       const data = await response.json();
-      console.log("Dados recebidos:", data);
       setLoadingItems(false);
       return data;
     } catch (error) {
@@ -81,8 +89,6 @@ function App() {
 
     reservationItem.active = false;
     reservationItem.reservationName = name;
-
-    console.log(reservationItem);
 
     fetch(
       `https://items-reservation-back.vercel.app/items/${reservationItem._id}`,
@@ -130,8 +136,17 @@ function App() {
   };
 
   const openSuggestionSite = async (url) => {
-    console.log(url);
     window.open(url, "_blank");
+  };
+
+  const copyToClipboard = (text) => {
+    navigator.clipboard.writeText(text)
+      .then(() => {
+        alert('Texto copiado para a área de transferência!');
+      })
+      .catch(err => {
+        console.error('Erro ao copiar o texto: ', err);
+      });
   };
 
   return (
@@ -230,12 +245,21 @@ function App() {
                       >
                         Sugestão lugar de compra
                       </a>
-                      <div
-                        onClick={() => openModal(item._id)}
-                        className="reservar"
-                      >
-                        Reservar
-                      </div>
+                      {item.key ? (
+                        <div
+                          onClick={() => openModal(item._id)}
+                          className="reservar"
+                        >
+                          Reservar
+                        </div>
+                      ) : (
+                        <div
+                          onClick={() => copyToClipboard(item.chavePix)}
+                          className="reservar"
+                        >
+                          Copiar chave PIX
+                        </div>
+                      )}
                     </div>
                   )
               )
